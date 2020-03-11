@@ -1,0 +1,20 @@
+sys=tf([1 2],[1 3 1]);
+[y,t]=step(sys);
+%step(sys)
+x=repmat(1,size(t));
+%size(x)
+%size(y)
+len=size(t);
+Tm=max(t)/len(1,1);
+%22.2340/633
+data=iddata(y,x,Tm);
+%plot(data)
+sys2=tfest(data,2);
+step(sys2)
+hold
+step(sys)
+%plot(data)
+%step(sys)
+%hold
+%step(sys2)
+%sys2=tf(sys2);
