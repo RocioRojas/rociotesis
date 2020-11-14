@@ -18,6 +18,8 @@ void setup() {
 
 
 
+
+
 a=Kd/(Kd+N*Tm);
 
 
