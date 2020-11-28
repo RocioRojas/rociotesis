@@ -5,9 +5,9 @@ import numpy as np
 from scipy.signal import lti
 import sys
 ser = serial.Serial()  # open serial port
-ser.baudrate=57600
+ser.baudrate=115200
 ser.timeout=10
-ser.port="COM9"
+ser.port="COM4"
 ser.open()
 
 
@@ -23,23 +23,27 @@ while True:
 	print(lect)
 	if lect=='':
 		u=np.append(u,0)
+
 	else:
 	
 		print("antes")
 		print(u)
-		u=np.append(u,int(lect))
+
+		u=np.append(u,float(int(lect)/100))
 		print("despues")
 		print(u)
 	t = np.linspace(0, 0.1, num=len(u))
+
 	if lect!="":
 		tout, y, x = lsim(system, u, t)
 		print(y)
-		b=int(y[len(y)-1])
+		b=int(y[len(y)-1]*100)
 		print(b)
 		print("enviando...")
 		# aux=' '.join(map(str, b))
-		env=ser.write(b)
-		print(env)
+		#env=ser.write(b)
+		env=ser.write((str(b) + "\n").encode())
+		print(str(env))
 
 #			plt.plot(t, y)
 #			plt.grid(alpha=0.3)

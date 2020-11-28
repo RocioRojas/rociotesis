@@ -50,7 +50,7 @@ Arredatos[i]=Read;
 if (Arredatos[i]=='\n'){
 entero=atol(Arredatos);
 fAuxLectura=entero/100.0;
-fAuxLectura*=255.0/5.0; 
+//fAuxLectura*=255.0/5.0; 
    
 cError=Ref-fAuxLectura;
 
@@ -65,7 +65,7 @@ Ut= Up+Ud+Ui;
 //    Serial.println(Ud);
 //    Serial.println(Ui);
 //    Serial.println(Ut);
-if (Ut>255.0) Ut=255.0;
+if (Ut>5.0) Ut=5.0;
 if (Ut<0.0) Ut=0.0;
 cErrorAnt=cError;
 UdAnt=Ud;
