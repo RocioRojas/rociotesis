@@ -1,5 +1,6 @@
 
-
+#define CMD_ABRIR_COMUNICACION 'o'
+#define CMD_CERRAR_COMUNICACION 'c'
 
 float cError,cErrorAnt=0.0,Kp=4.5187,Ki=627.4549,Kd=0.002,a,UdAnt=0.0,UiAnt=0.0,Up,Ui,Ud,Ut,Tm=0.61/1000,N=0;
 int Ref=50;
@@ -23,79 +24,80 @@ void setup() {
 a=Kd/(Kd+N*Tm);
 
 
-Serial.begin(57600);
+Serial.begin(115200);
 
 }
 
 void loop() {
-
-//if (Read==0x04){
-//flag = true;
-//}
-//else if (Read==0x08)
-//{
-//  flag=false;
-// }  
-
-// if(flag)
-if(Serial.available())
-{
-Read=Serial.read();
-//Read=(analogRead(A0))/4;
-
-Arredatos[i]=Read;
-
-
-
-if (Arredatos[i]=='\n'){
-entero=atol(Arredatos);
-fAuxLectura=entero/100.0;
-//fAuxLectura*=255.0/5.0; 
-   
-cError=Ref-fAuxLectura;
-
-//cError=Ref-Read;
-//Serial.println(cError);
-Up=Kp*cError;
- 
-Ud=Kd*(cError-cErrorAnt)/Tm;
-Ui=UiAnt+Ki*cError*Tm;
-Ut= Up+Ud+Ui;
-//    Serial.println(Up);
-//    Serial.println(Ud);
-//    Serial.println(Ui);
-//    Serial.println(Ut);
-if (Ut>5.0) Ut=5.0;
-if (Ut<0.0) Ut=0.0;
-cErrorAnt=cError;
-UdAnt=Ud;
-UiAnt=Ui;
-
-// Ut=999.9916;
-entero=Ut*100;
-//Serial.print(entero);
-sprintf(buff,"%d\n",entero) ;
-//Serial.println("Datos: ");
-//Serial.print(Arredatos);
-//analogWrite(3,Ut);
-//Serial.println(convertirFloat);
-entero=fAuxLectura*100;
-
-Serial.print(buff);
-
-
-memset(Arredatos, '\0', sizeof(Arredatos));
-i=0;
+    
+    
+    if(Serial.available())
+    {
+        Read=Serial.read();
+        //Read=(analogRead(A0))/4;
+        if (Read== CMD_ABRIR_COMUNICACION){
+          flag = true;
+          Ut=0;
+          sprintf(buff,"%d\n",Ut) ;
+          Serial.print(buff);
+        }
+        else if (Read== CMD_CERRAR_COMUNICACION)//
+        {
+          flag = false;
+        }  
+        
+        if( flag == true && Read != CMD_ABRIR_COMUNICACION  ){
+          Arredatos[i]=Read; 
+          
+          if (Arredatos[i]=='\n'){
+            entero=atol(Arredatos);
+            fAuxLectura=entero/100.0;
+            //fAuxLectura*=255.0/5.0; 
+               
+            cError=Ref-fAuxLectura;
+            
+            //cError=Ref-Read;
+            //Serial.println(cError);
+            Up=Kp*cError;
+             
+            Ud=Kd*(cError-cErrorAnt)/Tm;
+            Ui=UiAnt+Ki*cError*Tm;
+            Ut= Up+Ud+Ui;
+            //    Serial.println(Up);
+            //    Serial.println(Ud);
+            //    Serial.println(Ui);
+            //    Serial.println(Ut);
+            if (Ut>5.0) Ut=5.0;
+            if (Ut<0.0) Ut=0.0;
+            cErrorAnt=cError;
+            UdAnt=Ud;
+            UiAnt=Ui;
+            
+            // Ut=999.9916;
+            entero=Ut*100;
+            //Serial.print(entero);
+            sprintf(buff,"%d\n",entero) ;
+            //Serial.println("Datos: ");
+            //Serial.print(Arredatos);
+            //analogWrite(3,Ut);
+            //Serial.println(convertirFloat);
+            entero=fAuxLectura*100;
+            
+            Serial.print(buff);
+            
+            
+            memset(Arredatos, '\0', sizeof(Arredatos));
+            i=0;
+          }
+         }
+        else{
+          i++;
+        }
+        
+        //Serial.print(Read) ;
+        //Serial.write(57);
+        
+    }
 }
-else{
-i++;
-}
-
-//Serial.print(Read) ;
-//Serial.write(57);
-
-}
-
 
 //delayMicroseconds(8000);       
-}
