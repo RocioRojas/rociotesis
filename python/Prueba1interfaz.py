@@ -3,41 +3,53 @@ from tkinter import *
 from tkinter import filedialog
 from tkinter.font import Font
 import serial
-flag = 1
+
+import sys
+
+flag = 2
+bandera = False
 
 # definiendo objeto para la comunicacion
 puerto = serial.Serial() 		
 puerto.baudrate = 115200
-puerto.timeout = 200
+puerto.timeout = 10
+puerto.port="COM6"
+puerto.open()
 
+
+bg_color = "#9c9c9c"
+size_error_ventana= "250x100"
+
+sError1='Error: 01' # Error. Campo de puerto esta vacio
+sError2='Error: 02' # Error. No hay conexion de puerto
 
 window = Tk()
 
 window.title("PID")
 
-window.geometry('600x600')
-window.configure(background="LightSteelBlue3")
+window.geometry('400x200')
+window.configure(background=bg_color)
 # ---------------------------------------------------------------------------
-lbl1 = Label(window, text="Kp",bg="LightSteelBlue3")
-lbl1.grid(column=0, row=0)
-txt1 = Entry(window,width=40)
-txt1.grid(column=1, row=0)
+lbl1 = Label(window, text="Kp",bg=bg_color)
+lbl1.grid(column=0, row=0,padx=10,pady=4)
+txt1 = Entry(window,width=10)
+txt1.grid(column=1, row=0,padx=10,pady=4)
 
 
-lbl2 = Label(window, text="Kd",bg="LightSteelBlue3")
-lbl2.grid(column=0, row=1)
-txt2 = Entry(window,width=40)
-txt2.grid(column=1, row=1)
+lbl2 = Label(window, text="Kd",bg=bg_color)
+lbl2.grid(column=0, row=1,padx=10,pady=4)
+txt2 = Entry(window,width=10)
+txt2.grid(column=1, row=1,padx=10,pady=4)
 
-lbl3 = Label(window, text="Ki",bg="LightSteelBlue3")
-lbl3.grid(column=0, row=2)
-txt3 = Entry(window,width=40)
-txt3.grid(column=1, row=2)
+lbl3 = Label(window, text="Ki",bg=bg_color)
+lbl3.grid(column=0, row=2,padx=10,pady=4)
+txt3 = Entry(window,width=10)
+txt3.grid(column=1, row=2,padx=10,pady=4)
 
-lbl4 = Label(window, text="Tm",bg="LightSteelBlue3")
-lbl4.grid(column=0, row=3)
-txt4 = Entry(window,width=40)
-txt4.grid(column=1, row=3)
+lbl4 = Label(window, text="Tm",bg=bg_color)
+lbl4.grid(column=0, row=3,padx=10,pady=4)
+txt4 = Entry(window,width=10)
+txt4.grid(column=1, row=3,padx=10,pady=4)
 
 
 # ---------------------------------------------------------------------------
@@ -61,23 +73,26 @@ def Prueba():
 
 	global flag, puerto
 
+	if flag == 2:
+		flag = 1
+
+
 	if puerto.is_open == 1:  # si esta conectado
-		while 1==1:
+		
 			if flag == 1:		# encender led
-				myButton2.config(bg='green',text='Enviado')
-				flag = 2
-				puerto.write(b'o')		   # manda msj de apagar
-				break
-			if flag == 2:		# apagar led
-				myButton2.config(bg='red',text='Apagado')
-				flag = 1
-				puerto.write(b'c')		   # manda msj de apagar	   
-				break
+				btn_comunicar.config(bg='green',text='Iniciar comunicación')
+				puerto.write(b'o')  		   # manda msj de apagar
+				while True:
+					lect=puerto.readline()
+					print(lect)
+					if(lect!=''):
+						break	
+
 	else: # si no esta conectado
 		# abrir nueva ventana de dialogo
 		error2 = Tk()				
-		error2.title('errox02')
-		error2.geometry("250x100")
+		error2.title(sError2)
+		error2.geometry(size_error_ventana)
 
 
 		myLabel5 = Label(error2,text="Debe conectarse a un puerto")
@@ -101,8 +116,8 @@ def conectar():
 
 				# abrir nueva ventana de dialogo
 				error = Tk()				
-				error.title('errox04')
-				error.geometry("200x100")
+				error.title('Error: 04')
+				error.geometry(size_error_ventana)
 
 				myLabel4 = Label(error,text="Error en conexión")
 				myLabel4.pack(padx=10,pady=30)
@@ -112,8 +127,8 @@ def conectar():
 
 			# abrir nueva ventana de dialogo
 			error = Tk()				
-			error.title('errox01')
-			error.geometry("200x100")
+			error.title(sError1)
+			error.geometry(size_error_ventana)
 
 			# por favor ingrese un puerto valido
 			myLabel4 = Label(error,text="Inserte puerto válido")
@@ -124,26 +139,41 @@ def conectar():
 
 
 
+####################################################################
+# 				BOTON PARA CONFIGURAR PID
 
-myLabel = Label(window,text="Inserte puerto:", bg="LightSteelBlue3")
-myLabel.grid(column=2)
+btn = Button(window, text="Enviar PID",command = update)
+btn.grid(column=1,row =5)
+
+
+####################################################################
+# 				BOTON PARA CONECTAR PUERTO
+
+
+myLabel = Label(window,text="Inserte puerto:", bg=bg_color)
+myLabel.grid(column=3,row = 0)
 #myLabel.pack(padx=10,pady=20)
 
-portCom = Entry(window,width=12)
-portCom.grid(column=2)
+myLabel2 = Label(window,text="Desconectado", bg=bg_color)
+myLabel2.grid(column=3,row=2)
+
+myButton1 = Button(window, text="Conectar",command=conectar,width=9)
+myButton1.grid(column=3,row=3)
+
+portCom = Entry(window,width=10)
+portCom.grid(column=3,row = 1)
 #portCom.pack(padx=12,pady=15)
 portC = portCom.get()
 
-btn = Button(window, text="Actualizar",command = update)
-btn.grid(column=1)
 
-myButton2 = Button(window, text="comienzo",bg='green',command=Prueba)
-#myButton2.pack(padx=20,pady=20)
-myButton2.grid(column=2)
+#####################################################################
+# 			BOTON PARA INICIAR COMUNICACION
 
-myLabel2 = Label(window,text="Desconectado", bg="LightSteelBlue3")
-myLabel2.grid(column=2)
+btn_comunicar = Button(window,text="Iniciar comunicación",bg='green',command=Prueba)
+#btn_comunicar.pack(padx=20,pady=20)
+btn_comunicar.grid(column=2,row=7)
 
-myButton1 = Button(window, text="Conectar",command=conectar,width=9)
-myButton1.grid(column=2)
+
+
+
 window.mainloop()
