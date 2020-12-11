@@ -1,9 +1,13 @@
 
 from tkinter import *
+import matplotlib.pyplot as plt
+from scipy.signal import lsim
+import numpy as np
 from tkinter import filedialog
 from tkinter.font import Font
+from scipy.signal import lti
 import serial
-
+import time
 import sys
 
 flag = 2
@@ -15,6 +19,16 @@ puerto.baudrate = 115200
 puerto.timeout = 10
 puerto.port="COM6"
 puerto.open()
+
+
+
+A = np.array([[0, 1E4*0.2340], [-0.0061*1E4, -1E4*1.2927]])
+B = np.array([[0.0], [1.2195*1E3]])
+C = np.array([[1.0, 0.0]])
+D = 0.0
+system = lti(A, B, C, D)
+u=np.array([0])
+
 
 
 bg_color = "#9c9c9c"
@@ -71,7 +85,7 @@ def update():
 
 def Prueba():
 
-	global flag, puerto
+	global flag, puerto,u,A,B,C,D,x,y,t,tout
 
 	if flag == 2:
 		flag = 1
@@ -82,11 +96,36 @@ def Prueba():
 			if flag == 1:		# encender led
 				btn_comunicar.config(bg='green',text='Iniciar comunicación')
 				puerto.write(b'o')  		   # manda msj de apagar
+				timeout = time.time() + 10
+				print("Comenzando")
 				while True:
 					lect=puerto.readline()
-					print(lect)
+#					print(lect)
 					if(lect!=''):
-						break	
+						u=np.append(u,0)
+					else:
+	
+#						print("antes")
+#						print(u)
+
+						u=np.append(u,float(int(lect)/100))
+#						print("despues")
+#						print(u)
+					t = np.linspace(0, 0.1, num=len(u))
+
+					if lect!="":
+						tout, y, x = lsim(system, u, t)
+#						print(y)
+						b=int(y[len(y)-1]*100)
+#						print(b)
+#						print("enviando...")
+						# aux=' '.join(map(str, b))
+						#env=ser.write(b)
+						puerto.write((str(b) + "\n").encode())
+#						print(str(env))	
+					if time.time() > timeout:
+						print("Terminado")
+						break
 
 	else: # si no esta conectado
 		# abrir nueva ventana de dialogo
@@ -99,6 +138,8 @@ def Prueba():
 		myLabel5.pack(padx=10,pady=30)
 
 
+
+	
 
 def conectar():
 	
@@ -137,6 +178,32 @@ def conectar():
 		puerto.close()
 		myLabel2.config(text='Desconectado')
 
+##################################################################
+#                 Funcion para graficar
+
+def Graficar():
+
+	global flag, puerto,u,A,B,C,D,x,y,t,tout
+
+	print(x)
+	print("\n\n\n")
+	print(y)
+	print("\n\n\n")
+	print(t)
+	print("\n\n\n")
+	print(tout)
+	print("\n\n\n")
+	plt.plot(t, y)
+	plt.grid(alpha=0.3)
+	plt.xlabel('t')
+	plt.show()
+
+
+
+
+
+
+
 
 
 ####################################################################
@@ -173,7 +240,12 @@ btn_comunicar = Button(window,text="Iniciar comunicación",bg='green',command=Pr
 #btn_comunicar.pack(padx=20,pady=20)
 btn_comunicar.grid(column=2,row=7)
 
+#######################################################################
+#               Boton para comunicación
 
+btn_graficar = Button(window,text="Graficar",bg='green',command=Graficar)
+#btn_comunicar.pack(padx=20,pady=20)
+btn_graficar.grid(column=2,row=9)
 
 
 window.mainloop()

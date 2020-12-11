@@ -7,7 +7,7 @@ import sys
 ser = serial.Serial()  # open serial port
 ser.baudrate=115200
 ser.timeout=10
-ser.port="COM4"
+ser.port="COM6"
 ser.open()
 
 
@@ -17,8 +17,11 @@ C = np.array([[1.0, 0.0]])
 D = 0.0
 system = lti(A, B, C, D)
 u=np.array([0])
-
+ser.write(b'o') 
+contador =	0
 while True:
+	contador +=1
+
 	lect=ser.readline()
 	print(lect)
 	if lect=='':
@@ -45,7 +48,27 @@ while True:
 		env=ser.write((str(b) + "\n").encode())
 		print(str(env))
 
+		if contador == 1000:
+
+
 #			plt.plot(t, y)
 #			plt.grid(alpha=0.3)
 #			plt.xlabel('t')
 #			plt.show()
+
+
+###############################################3
+
+			print(x)
+			print("\n\n\n")
+			print(y)
+			print("\n\n\n")
+			print(t)
+			print("\n\n\n")
+			print(tout)
+			print("\n\n\n")
+			plt.plot(t, y)
+			plt.grid(alpha=0.3)
+			plt.xlabel('t')
+			plt.show()
+			break
