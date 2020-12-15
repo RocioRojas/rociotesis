@@ -96,12 +96,12 @@ def Prueba():
 			if flag == 1:		# encender led
 				btn_comunicar.config(bg='green',text='Iniciar comunicación')
 				puerto.write(b'o')  		   # manda msj de apagar
-				timeout = time.time() + 10
+				timeout = time.time() + 30
 				print("Comenzando")
 				while True:
 					lect=puerto.readline()
 #					print(lect)
-					if(lect!=''):
+					if(len(lect)==0):
 						u=np.append(u,0)
 					else:
 	
@@ -111,9 +111,9 @@ def Prueba():
 						u=np.append(u,float(int(lect)/100))
 #						print("despues")
 #						print(u)
-					t = np.linspace(0, 0.1, num=len(u))
+						t = np.linspace(0, 0.1, num=len(u))
 
-					if lect!="":
+					
 						tout, y, x = lsim(system, u, t)
 #						print(y)
 						b=int(y[len(y)-1]*100)
@@ -125,6 +125,7 @@ def Prueba():
 #						print(str(env))	
 					if time.time() > timeout:
 						print("Terminado")
+						puerto.write(b'c')  		   # manda msj de apagar
 						break
 
 	else: # si no esta conectado
@@ -185,16 +186,17 @@ def Graficar():
 
 	global flag, puerto,u,A,B,C,D,x,y,t,tout
 
-	print(x)
-	print("\n\n\n")
-	print(y)
-	print("\n\n\n")
-	print(t)
-	print("\n\n\n")
-	print(tout)
-	print("\n\n\n")
+	# print(x)
+	# print("\n\n\n")
+	# print(y)
+	# print("\n\n\n")
+	# print(t)
+	# print("\n\n\n")
+	# print(tout)
+	# print("\n\n\n")
+	print(u)
 	plt.plot(t, y)
-	plt.grid(alpha=0.3)
+	#plt.grid(alpha=0.3)
 	plt.xlabel('t')
 	plt.show()
 
