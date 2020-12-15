@@ -3,7 +3,7 @@
 #define CMD_CERRAR_COMUNICACION 'c'
 
 float cError,cErrorAnt=0.0,Kp=4.5187,Ki=627.4549,Kd=0.002,a,UdAnt=0.0,UiAnt=0.0,Up,Ui,Ud,Ut,Tm=0.61/1000,N=0;
-int Ref=50;
+float Ref=0.98;
 float z,zant=0,zaux,u,g1,b1,y1,F;
 float R=1.5;
 int aux,Read, i=0;
@@ -89,14 +89,14 @@ void loop() {
             memset(Arredatos, '\0', sizeof(Arredatos));
             i=0;
           }
-         }
+         
         else{
           i++;
         }
         
         //Serial.print(Read) ;
         //Serial.write(57);
-        
+        }
     }
 }
 
