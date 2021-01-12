@@ -2,7 +2,7 @@
 #define CMD_ABRIR_COMUNICACION 'o'
 #define CMD_CERRAR_COMUNICACION 'c'
 
-float cError,cErrorAnt=0.0,Kp=4.5187,Ki=627.4549,Kd=0.002,a,UdAnt=0.0,UiAnt=0.0,Up,Ui,Ud,Ut,Tm=0.61/1000,N=0;
+float cError,cErrorAnt=0.0,Kp=0.8817,Ki=40.96,Kd=2.689/1000000,a,UdAnt=0.0,UiAnt=0.0,Up,Ui,Ud,Ut,Tm=0.61/1000,N=0,cError_2=0,Ut_1=0;
 float Ref=0.98;
 float z,zant=0,zaux,u,g1,b1,y1,F;
 float R=1.5;
@@ -58,18 +58,20 @@ void loop() {
             
             //cError=Ref-Read;
             //Serial.println(cError);
-            Up=Kp*cError;
+            
              
             Ud=Kd*(cError-cErrorAnt)/Tm;
-            Ui=UiAnt+Ki*cError*Tm;
-            Ut= Up+Ud+Ui;
+            Ui=Ki*cErrorAnt*Tm+Ki*cError*Tm;
+            Ut= Ut_1+(Kp+Ki+Kd)*cError-(2*Kd+Kp)*cErrorAnt+Kd*cError_2;
             //    Serial.println(Up);
             //    Serial.println(Ud);
             //    Serial.println(Ui);
             //    Serial.println(Ut);
             if (Ut>5.0) Ut=5.0;
             if (Ut<0.0) Ut=0.0;
+            cError_2=cErrorAnt;
             cErrorAnt=cError;
+            Ut_1=Ut;
             UdAnt=Ud;
             UiAnt=Ui;
             
