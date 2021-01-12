@@ -1,11 +1,11 @@
 
 from tkinter import *
 import matplotlib.pyplot as plt
-from scipy.signal import lsim
 import numpy as np
-from tkinter import filedialog
 from tkinter.font import Font
-from scipy.signal import lti
+from control.matlab import lsim
+from control import StateSpace as ss
+import control
 import serial
 import time
 import sys
@@ -17,18 +17,20 @@ bandera = False
 puerto = serial.Serial() 		
 puerto.baudrate = 115200
 puerto.timeout = 10
-puerto.port="COM6"
+puerto.port="COM5"
 puerto.open()
 
 
 
+y_1=0
+y_2=0
 A = np.array([[0, 1E4*0.2340], [-0.0061*1E4, -1E4*1.2927]])
 B = np.array([[0.0], [1.2195*1E3]])
 C = np.array([[1.0, 0.0]])
 D = 0.0
-system = lti(A, B, C, D)
-u=np.array([0])
-
+system = ss(A, B, C, D)
+u=np.array([])
+yout=np.array([])
 
 
 bg_color = "#9c9c9c"
@@ -85,7 +87,7 @@ def update():
 
 def Prueba():
 
-	global flag, puerto,u,A,B,C,D,x,y,t,tout
+	global flag, puerto,u,A,B,C,D,x,y,t,tout,yout,y_1,y_2
 
 	if flag == 2:
 		flag = 1
@@ -96,13 +98,14 @@ def Prueba():
 			if flag == 1:		# encender led
 				btn_comunicar.config(bg='green',text='Iniciar comunicación')
 				puerto.write(b'o')  		   # manda msj de apagar
-				timeout = time.time() + 30
+				timeout = 200 #time.time() + 5
+				count = 0
 				print("Comenzando")
 				while True:
 					lect=puerto.readline()
 #					print(lect)
 					if(len(lect)==0):
-						u=np.append(u,0)
+						u=np.insert(u,len(u),0)
 					else:
 	
 #						print("antes")
@@ -113,17 +116,24 @@ def Prueba():
 #						print(u)
 						t = np.linspace(0, 0.1, num=len(u))
 
-					
-						tout, y, x = lsim(system, u, t)
-#						print(y)
-						b=int(y[len(y)-1]*100)
+						Tm=0.61/1000
+						constante = 1 + (1/1.432e5)*(1/Tm/Tm) + (0.0903/Tm)
+
+						y = (19.9232 * float(int(lect)/100.0)  + (2/1.432E5/Tm/Tm)*y_1 - (1/1.432E5/Tm/Tm)*y_2 + (0.0903/Tm)*y_1)/constante
+						y_2=y_1
+						y_1=y
+						yout =np.append(yout,y)
+#						tout, y, x = control.forced_response(system, t, u)
+						#print(y)
+						b=int(y*100)
 #						print(b)
 #						print("enviando...")
 						# aux=' '.join(map(str, b))
 						#env=ser.write(b)
 						puerto.write((str(b) + "\n").encode())
-#						print(str(env))	
-					if time.time() > timeout:
+#						print(str(env))
+					count+=1	
+					if count > timeout:
 						print("Terminado")
 						puerto.write(b'c')  		   # manda msj de apagar
 						break
@@ -184,7 +194,7 @@ def conectar():
 
 def Graficar():
 
-	global flag, puerto,u,A,B,C,D,x,y,t,tout
+	global flag, puerto,u,A,B,C,D,x,y,t,tout,yout
 
 	# print(x)
 	# print("\n\n\n")
@@ -194,11 +204,13 @@ def Graficar():
 	# print("\n\n\n")
 	# print(tout)
 	# print("\n\n\n")
-	print(u)
-	plt.plot(t, y)
-	#plt.grid(alpha=0.3)
+	#print(u)
+	print(yout)
+	plt.plot(yout)
+	plt.grid(alpha=0.3)
 	plt.xlabel('t')
 	plt.show()
+
 
 
 

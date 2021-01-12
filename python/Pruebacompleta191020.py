@@ -17,7 +17,7 @@ C = np.array([[1.0, 0.0]])
 D = 0.0
 system = lti(A, B, C, D)
 u=np.array([0])
-ser.write(b'o') 
+
 contador =	0
 while True:
 	contador +=1
