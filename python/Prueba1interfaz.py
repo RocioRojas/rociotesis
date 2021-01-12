@@ -114,9 +114,10 @@ def Prueba():
 						u=np.append(u,float(int(lect)/100))
 #						print("despues")
 #						print(u)
-						t = np.linspace(0, 0.1, num=len(u))
-
 						Tm=0.61/1000
+						t = np.linspace(0, 0.1, num=len(u))*(len(u)-1)*Tm
+
+						
 						constante = 1 + (1/1.432e5)*(1/Tm/Tm) + (0.0903/Tm)
 
 						y = (19.9232 * float(int(lect)/100.0)  + (2/1.432E5/Tm/Tm)*y_1 - (1/1.432E5/Tm/Tm)*y_2 + (0.0903/Tm)*y_1)/constante
@@ -205,8 +206,8 @@ def Graficar():
 	# print(tout)
 	# print("\n\n\n")
 	#print(u)
-	print(yout)
-	plt.plot(yout)
+	#print(yout)
+	plt.plot(t,yout)
 	plt.grid(alpha=0.3)
 	plt.xlabel('t')
 	plt.show()
