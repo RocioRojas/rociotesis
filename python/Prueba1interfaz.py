@@ -45,6 +45,11 @@ window.title("PID")
 
 window.geometry('400x200')
 window.configure(background=bg_color)
+#######################################################################
+#             Autotamaño de la pantalla   
+for i in range(4):
+    window.columnconfigure(i, weight=1, minsize=40)
+    window.rowconfigure(i, weight=1, minsize=20)
 # ---------------------------------------------------------------------------
 lbl1 = Label(window, text="Kp",bg=bg_color)
 lbl1.grid(column=0, row=0,padx=10,pady=4)
@@ -115,7 +120,7 @@ def Prueba():
 #						print("despues")
 #						print(u)
 						Tm=0.61/1000
-						t = np.linspace(0, 0.1, num=len(u))*(len(u)-1)*Tm
+						t = np.linspace(0, 1, num=len(u))
 
 						
 						constante = 1 + (1/1.432e5)*(1/Tm/Tm) + (0.0903/Tm)
@@ -189,7 +194,13 @@ def conectar():
 	else:					# si esta conectado entro aqui
 		puerto.close()
 		myLabel2.config(text='Desconectado')
+##################################################################
+#            Funcion para obtener los valores de la grafica
 
+def step_info(t,yout):
+    print("OS: %f%s"%((yout.max()/yout[-1]-1)*100,'%'))
+    print( "Tr: %fs"%(t[next(i for i in range(0,len(yout)-1) if yout[i]>yout[-1]*.90)]-t[0]))
+    print( "Ts: %fs"%(t[next(len(yout)-i for i in range(2,len(yout)-1) if abs(yout[-i]/yout[-1])>1.02)]-t[0]))
 ##################################################################
 #                 Funcion para graficar
 
@@ -207,6 +218,10 @@ def Graficar():
 	# print("\n\n\n")
 	#print(u)
 	#print(yout)
+
+	Tm=0.61/1000
+	t=t*(len(u)-1)*Tm
+	step_info(t,yout)
 	plt.plot(t,yout)
 	plt.grid(alpha=0.3)
 	plt.xlabel('t')
