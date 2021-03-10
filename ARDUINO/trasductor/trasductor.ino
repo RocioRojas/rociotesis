@@ -14,12 +14,13 @@
 int iLectura, lect, i = 0;
 bool flag;
 char buff[100], datos[5];
+char *ptr;
 unsigned long entero;
 float fLecturaAux, ut;
 void setup()
 {
 
-  Serial.begin(9600);
+  Serial.begin(115200);
 }
 
 void loop()
@@ -44,7 +45,7 @@ void loop()
       datos[i] = iLectura;
       if (datos[i] == '\n')
       {
-        entero = atol(datos);
+        entero = strtol(datos, &ptr, 10);
         fLecturaAux = entero * 0.01;
 
         dacWrite(25, fLecturaAux * 255 * 0.30303);

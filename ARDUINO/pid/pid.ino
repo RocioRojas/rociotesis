@@ -46,16 +46,16 @@ void loop()
   //  ut=kp*fError;
   if (ut > 5.0)
     ut = 5.0;
-  /*
-        if (ut < 0.0)
-          ut = 0.0;
-          */
+
+  if (ut < 0.0)
+    ut = 0.0;
+
   ut_1 = ut;
   fError_2 = fError_1;
   fError_1 = fError;
   // analogWrite(3, 0.5 * 255 / 5);
   writeBin(ut * 255 * 0.2);
-  delayMicroseconds(610);
+  delayMicroseconds(61);
 }
 
 void writeBin(long valor)
