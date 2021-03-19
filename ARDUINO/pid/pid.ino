@@ -2,15 +2,15 @@
 #define CMD_ABRIR_COMUNICACION 'o'
 #define CMD_CERRAR_COMUNICACION 'c'
 // configuracion de pines
-#define pin0 2
-#define pin1 3
-#define pin2 4
-#define pin3 5
-#define pin4 6
-#define pin5 7
-#define pin6 8
-#define pin7 9
-#define bitEntrada A0
+#define pin0  4
+#define pin1  0
+#define pin2  2
+#define pin3 14
+#define pin4 12
+#define pin5 13
+#define pin6 15
+#define pin7 3
+#define bitEntrada 5
 float fError, fError_1 = 0, fError_2 = 0;
 float kp = 0.8817, ki = 0.7234, kd = 2.689 / 1000000;
 float ut, ut_1;
@@ -34,13 +34,13 @@ void setup()
   pinMode(pin6, OUTPUT);
   pinMode(pin7, OUTPUT);
   pinMode(bitEntrada, INPUT);
-  Serial.begin(115200);
+  Serial.begin(921600);
 }
 
 void loop()
 {
   if (digitalRead(bitEntrada) == 1)
-  {
+  {//Serial.print("hola");
     if (Serial.available())
     {
       iLectura = Serial.read();
@@ -90,7 +90,7 @@ void loop()
   }
   else
   {
-    fLecturaAux = analogRead(A4) * 5 / 1023;
+    fLecturaAux = analogRead(1) * 5 / 1023;
     fError = ref - fLecturaAux;
     ut = (ut_1 + (kp + ki + kd) * fError - (2 * kd + kp) * fError_1 + kd * fError_2);
 
