@@ -2,9 +2,9 @@
 #define CMD_ABRIR_COMUNICACION 'o'
 #define CMD_CERRAR_COMUNICACION 'c'
 // configuracion de pines
-#define pin0  4
-#define pin1  0
-#define pin2  2
+#define pin0 4
+#define pin1 0
+#define pin2 2
 #define pin3 14
 #define pin4 12
 #define pin5 13
@@ -40,7 +40,7 @@ void setup()
 void loop()
 {
   if (digitalRead(bitEntrada) == 1)
-  {//Serial.print("hola");
+  { //Serial.print("hola");
     if (Serial.available())
     {
       iLectura = Serial.read();
@@ -53,6 +53,9 @@ void loop()
       }
       else if (iLectura == CMD_CERRAR_COMUNICACION)
       {
+        ut = 0;
+        memset(datos, '\0', sizeof(datos));
+        memset(buff, '\0', sizeof(buff));
         flag = false;
       }
       if (flag == true && iLectura != CMD_ABRIR_COMUNICACION)
@@ -64,13 +67,14 @@ void loop()
           fLecturaAux = entero / 100.0;
           fError = ref - fLecturaAux;
           ut = ut_1 + (kp + ki + kd) * fError - (2 * kd + kp) * fError_1 + kd * fError_2;
-
+          //ut = (kp) * fError;
+          // ut = 1.0;
           if (ut > 5.0)
             ut = 5.0;
-          /*
-        if (ut < 0.0)
-          ut = 0.0;
-          */
+
+          if (ut < 0.0)
+            ut = 0.0;
+
           ut_1 = ut;
           fError_2 = fError_1;
           fError_1 = fError;
