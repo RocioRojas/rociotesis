@@ -26,8 +26,7 @@ B = np.array([[0.0], [1.2195 * 1E3]])
 C = np.array([[1.0, 0.0]])
 D = 0.0
 banderaConfigurar = False
-trespinicial = np.linspace(0, 1, num=499)
-respinicial = np.array([])
+
 ###############################
 # Creacion del espacio de estado
 system = ss(A, B, C, D)
@@ -76,7 +75,7 @@ lblSp.place(x=50, y=380)
 ###############################################################
 # Para mostrar en la ventana emergente donde meter los valores de a2,a1,a0,b0
 
-lbla2 = Label(window, text="Ecuación de la planta= b0/(a2*s^2+a1*s+a0)", bg=bg_color, fg="#000",font="Helvetica 10 bold").place(x=50, y=20)
+lbla123 = Label(window, text="Ecuación de la planta= b0/(a2*s^2+a1*s+a0)", bg=bg_color, fg="#000",font="Helvetica 10 bold").place(x=50, y=20)
 
 lbla2 = Label(window, text="a2", bg=bg_color, fg="#000",font="Helvetica 10 bold").place(x=120, y=50)
 
@@ -283,7 +282,9 @@ def Graficar():
     plt.show()
 
 def Graficarinicio():
-
+    global tm
+    trespinicial = np.linspace(0, tm, num=499)
+    respinicial = np.array([])
     plt.plot(trespinicial,respinicial)
     plt.grid(alpha=0.3)
     plt.xlabel('t')
