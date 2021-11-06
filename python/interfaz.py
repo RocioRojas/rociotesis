@@ -1,11 +1,7 @@
 from tkinter import *
 import matplotlib.pyplot as plt
 import numpy as np
-from tkinter.font import Font
-from control.matlab import lsim
-from control import StateSpace as ss
 from time import perf_counter
-import control
 import serial
 
 import sys
@@ -21,20 +17,13 @@ puerto.timeout = 10
 # Valores iniciales y de las matrices
 y_1 = 0
 y_2 = 0
-A = np.array([[0, 1E4 * 0.2340], [-0.0061 * 1E4, -1E4 * 1.2927]])
-B = np.array([[0.0], [1.2195 * 1E3]])
-C = np.array([[1.0, 0.0]])
-D = 0.0
-banderaConfigurar = False
 
-###############################
-# Creacion del espacio de estado
-system = ss(A, B, C, D)
+banderaConfigurar = False
+banderacontrolador = False
 #################################
 # Arreglo vacio para entrada y salida
 u = np.array([])
 yout = np.array([])
-# t = np.linspace(0, 1, num=200)
 t = np.array([])
 y = 0
 ###################################
@@ -48,6 +37,7 @@ sError1 = 'Error: 01'  # Error. Campo de puerto esta vacio
 sError2 = 'Error: 02'  # Error. No hay conexion de puerto
 sError4 = 'Error: 04'  # Error en conexión
 sError3 = 'Error: 03'  # configure la planta
+sError5='Error: 05'   # Error configuración de de controlador
 #####################################
 # Ventana de Window
 
@@ -55,78 +45,117 @@ window = Tk()
 
 window.title("PID")
 
-window.geometry('600x420')
+window.geometry('800x500')
 
 window.configure(background=bg_color)
 
 #######################################################################
-#             Autotamano de la pantalla   
+#             Autotamano de la pantalla
 
 
 ###################################################################
 #   Para mostrar los valores de la grafica en la ventana emergente
 lbldatos = Label(window, bg=bg_color, fg="#000", text="Datos del gráfico",font="Helvetica 12 bold")
-lbldatos.place(x=50, y=350)
+lbldatos.place(x=50, y=400)
 lblSp = Label(window, bg=bg_color, fg="#000")
-lblSp.place(x=50, y=380)
-# lblSp.grid(column=0, row=7,padx=10,pady=4)
+lblSp.place(x=50, y=420)
+
 
 
 ###############################################################
 # Para mostrar en la ventana emergente donde meter los valores de a2,a1,a0,b0
 
-lbla123 = Label(window, text="Ecuación de la planta= b0/(a2*s^2+a1*s+a0)", bg=bg_color, fg="#000",font="Helvetica 10 bold").place(x=50, y=20)
+lbla123 = Label(window, text="Ecuación de la planta= b0/(a2*s^2+a1*s+a0)", bg=bg_color, fg="#000",font="Helvetica 10 bold").place(x=30, y=10)
 
-lbla2 = Label(window, text="a2", bg=bg_color, fg="#000",font="Helvetica 10 bold").place(x=120, y=50)
-
-# lbl1.grid(column=0, row=0,padx=10,pady=4)
+lbla2 = Label(window, text="a2", bg=bg_color, fg="#000",font="Helvetica 10 bold").place(x=100, y=50)
 textoa2 = StringVar()
 txta2 = Entry(window, width=10, textvariable=textoa2)
 textoa2.set(1)
-txta2.place(x=150, y=50)
+txta2.place(x=130, y=50)
 
-# txt1.grid(column=1, row=0,padx=10,pady=4)
 
 textoa1 = StringVar()
-lbla1 = Label(window, text="a1", bg=bg_color, fg="#000", font="Helvetica 10 bold").place(x=120, y=80)
-# lbl2.grid(column=0, row=1,padx=10,pady=4)
-
+lbla1 = Label(window, text="a1", bg=bg_color, fg="#000", font="Helvetica 10 bold").place(x=100, y=80)
 txta1 = Entry(window, width=10, textvariable=textoa1)
 textoa1.set(1.293E4)
-txta1.place(x=150, y=80)
-# txt2.grid(column=1, row=1,padx=10,pady=4)
+txta1.place(x=130, y=80)
 
-lbla0 = Label(window, text="a0", bg=bg_color, fg="#000",font="Helvetica 10 bold").place(x=120, y=110)
-# lbl3.grid(column=0, row=2,padx=10,pady=4)
+
+lbla0 = Label(window, text="a0", bg=bg_color, fg="#000",font="Helvetica 10 bold").place(x=100, y=110)
 textoa0 = StringVar()
 txta0 = Entry(window, width=10, textvariable=textoa0)
 textoa0.set(1.432e5)
-txta0.place(x=150, y=110)
-# txt3.grid(column=1, row=2,padx=10,pady=4)
+txta0.place(x=130, y=110)
 
-lblb0 = Label(window, text="b0", bg=bg_color, fg="#000",font="Helvetica 10 bold").place(x=120, y=140)
-# lbl4.grid(column=0, row=3,padx=10,pady=4)
+
+lblb0 = Label(window, text="b0", bg=bg_color, fg="#000",font="Helvetica 10 bold").place(x=100, y=140)
 textob0 = StringVar()
 txtb0 = Entry(window, width=10, textvariable=textob0)
 textob0.set(2.853e6)
+txtb0.place(x=130, y=140)
 
-txtb0.place(x=150, y=140)
 
-lbltm = Label(window, text="Tm", bg=bg_color, fg="#000",font="Helvetica 10 bold").place(x=120, y=170)
-# lbl4.grid(column=0, row=3,padx=10,pady=4)
+lbltm = Label(window, text="Tm", bg=bg_color, fg="#000",font="Helvetica 10 bold").place(x=100, y=170)
 textotm = StringVar()
 txttm1 = Entry(window, width=10, textvariable=textotm)
 textotm.set(0.61 / 1000)
-txttm1.place(x=150, y=170)
+txttm1.place(x=130, y=170)
+#############################################################
+#                     Controlador
 
+lblacon = Label(window, text="Ingrese los valores del PID", bg=bg_color, fg="#000",font="Helvetica 10 bold").place(x=350, y=10)
 
-# txt4.grid(column=1, row=3,padx=10,pady=4)
+lblkp = Label(window, text="Kp", bg=bg_color, fg="#000",font="Helvetica 10 bold").place(x=355, y=50)
+textokp = StringVar()
+txtkp = Entry(window, width=10, textvariable=textokp)
+textokp.set(1.06)
+txtkp.place(x=390, y=50)
+
+lblkd = Label(window, text="Kd", bg=bg_color, fg="#000",font="Helvetica 10 bold").place(x=355, y=80)
+textokd = StringVar()
+txtkd = Entry(window, width=10, textvariable=textokd)
+textokd.set(-0.08)
+txtkd.place(x=390, y=80)
+
+lblki = Label(window, text="Ki", bg=bg_color, fg="#000",font="Helvetica 10 bold").place(x=355, y=110)
+textoki = StringVar()
+txtki = Entry(window, width=10, textvariable=textoki)
+textoki.set(215.7)
+txtki.place(x=390, y=110)
+
 
 
 # ---------------------------------------------------------------------------
+
+def Controlador():
+    global kp, kd, ki, banderacontrolador
+    banderacontrolador=True
+    kp = float(txtkp.get())*1000
+    kd = float(txtkd.get())*1000
+    ki = float(txtki.get())*1000
+
+
+    if puerto.is_open==1 and banderacontrolador==True:
+       # puerto.reset_input_buffer()
+        puerto.write(b'p')
+        puerto.write((str(kp)+"\x7C"+str(kd)+"\x7C"+str(ki) + "\n").encode())
+        #puerto.write((str(kd)).encode())
+        #puerto.write((str(ki) + "\n").encode())
+
+
+
+
+
+
+
+
+
+############################################################3
 def configurar():
     global a2,a1,a0,b0,tm,t, banderaConfigurar, trespinicial, respinicial
     banderaConfigurar = True
+    trespinicial=np.linspace(0,1,num=499)
+    respinicial=np.array([])
     a2 = float(txta2.get())  # 1
     a1 = float(txta1.get())  # 2
     a0 = float(txta0.get())  # 3
@@ -148,7 +177,7 @@ def respuestaPlanta():
     # Si se abre el puerto
 
 
-    if puerto.is_open == 1 and banderaConfigurar == True:  # si esta conectado
+    if puerto.is_open == 1 and banderaConfigurar == True and banderacontrolador== True:  # si esta conectado
         puerto.reset_input_buffer()
         auxy = np.array([])
         t = np.array([])
@@ -159,13 +188,12 @@ def respuestaPlanta():
 
         btn_comunicar.config(bg='green', text='Iniciar comunicacion')
         puerto.write(b'o')  # Envia el caracter "o" para iniciar la comunicacion
-        timeout = 499  # Se realizan 499 antes de salir del ciclo
+        timeout = 999  # Se realizan 499 antes de salir del ciclo
 
         print("Comenzando")
         while True:
             lect = puerto.readline()  # guardar en la variable lect lo que lea el puerto
-            #lect = b'100'
-            #					print(lect)
+
             if (len(lect) == 0):
                u = np.insert(u, len(u), 0)
             else:
@@ -176,13 +204,10 @@ def respuestaPlanta():
                 y_2 = y_1
                 y_1 = y
                 auxy = np.append(auxy, y)
-                #						tout, y, x = control.forced_response(system, t, u)
+
                 # print(y)
                 b = int(y * 100)
-                #						print(b)
-                #						print("enviando...")
-                # aux=' '.join(map(str, b))
-                # env=ser.write(b)
+
                 puerto.write((str(b) + "\n").encode())
             #						print(str(env))
             count += 1  # Aumenta la cuenta
@@ -210,7 +235,14 @@ def respuestaPlanta():
 
             labelconfigurar = Label(error3, text="Debe configurar la planta primero", font="Helvetica 10 bold")
             labelconfigurar.pack(padx=10, pady=30)
+        elif banderacontrolador == False:
 
+
+            errorcont=Tk()
+            errorcont.title(sError5)
+            errorcont.geometry(size_error_ventana)
+            labelcont=Label(errorcont, text=" Se debe configurar el controlador", font="Helvetica 10 bold")
+            labelcont.pack(padx=10,pady=30)
         else:
             error2 = Tk()
             error2.title(sError2)
@@ -296,45 +328,44 @@ def Graficarinicio():
 btn = Button(window, text="Configurar Planta", command=configurar,font="Helvetica 10 bold")
 btn.place(x=125, y=210)
 # btn.grid(column=1,row =5)
+#                  BOTON CONFIGURAR CONTROLADOR
 
+
+btncont = Button(window, text="Configurar el controlador", command=Controlador,font="Helvetica 10 bold")
+btncont.place(x=350, y=150)
 
 ####################################################################
 # 				BOTON PARA CONECTAR PUERTO
 
 
-labelPuerto = Label(window, text="Inserte puerto (Ejemplo: com#):", bg=bg_color, fg="#000", font="Helvetica 10 bold").place(x=350, y=50)
-# myLabel.grid(column=3,row = 0)
-# myLabel.pack(padx=10,pady=20)
+labelPuerto = Label(window, text="Inserte un puerto (Ejemplo: com#):", bg=bg_color, fg="#000", font="Helvetica 10 bold").place(x=570, y=10)
+
 portCom = Entry(window, width=10)
-portCom.place(x=360, y=80)
+portCom.place(x=580, y=40)
 
 labeldesconectado = Label(window, text="Desconectado", bg=bg_color, fg="#000",font="Helvetica 10 bold")
-# myLabel2.grid(column=3,row=2)
-labeldesconectado.place(x=350, y=110)
-btn_Conectar = Button(window, text="Conectar", command=conectar, width=9,font="Helvetica 10 bold")
-# myButton1.grid(column=3,row=3)
-btn_Conectar.place(x=355, y=140)
 
-# portCom.grid(column=3,row = 1)
-# portCom.pack(padx=12,pady=15)
+labeldesconectado.place(x=570, y=80)
+btn_Conectar = Button(window, text="Conectar", command=conectar, width=9,font="Helvetica 10 bold")
+
+btn_Conectar.place(x=580, y=110)
+
+
 portC = portCom.get()
+
+
 
 #####################################################################
 # 			BOTON PARA INICIAR COMUNICACION
 
 btn_comunicar = Button(window, text="Iniciar comunicación", bg='#99d160', command=respuestaPlanta, font="Helvetica 10 bold")
-# btn_comunicar.pack(padx=20,pady=20)
-# btn_comunicar.grid(column=2,row=7)
-btn_comunicar.place(x=220, y=280)
+btn_comunicar.place(x=300, y=270)
 #######################################################################
 #               Boton para comunicación
 
 btn_graficar = Button(window, text="Graficar respuesta controlada", bg='#f1d600', command=Graficar,font="Helvetica 10 bold")
-btn_graficar.place(x=80, y=320)
+btn_graficar.place(x=120, y=320)
 btn_graficarinicio = Button(window, text="Graficar respuesta original", bg='#f1d600', command=Graficarinicio,font="Helvetica 10 bold")
-btn_graficarinicio.place(x=320, y=320)
-# btn_comunicar.pack(padx=20,pady=20)
-# btn_graficar.grid(column=2,row=9)
-
+btn_graficarinicio.place(x=420, y=320)
 
 window.mainloop()
