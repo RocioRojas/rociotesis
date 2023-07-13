@@ -77,28 +77,28 @@ txta2.place(x=130, y=50)
 textoa1 = StringVar()
 lbla1 = Label(window, text="a1", bg=bg_color, fg="#000", font="Helvetica 10 bold").place(x=100, y=80)
 txta1 = Entry(window, width=10, textvariable=textoa1)
-textoa1.set(1.293E4)
+textoa1.set(-0.9902)
 txta1.place(x=130, y=80)
 
 
 lbla0 = Label(window, text="a0", bg=bg_color, fg="#000",font="Helvetica 10 bold").place(x=100, y=110)
 textoa0 = StringVar()
 txta0 = Entry(window, width=10, textvariable=textoa0)
-textoa0.set(1.432e5)
+textoa0.set(1.016e-5)
 txta0.place(x=130, y=110)
 
 
 lblb0 = Label(window, text="b0", bg=bg_color, fg="#000",font="Helvetica 10 bold").place(x=100, y=140)
 textob0 = StringVar()
 txtb0 = Entry(window, width=10, textvariable=textob0)
-textob0.set(2.853e6)
+textob0.set(0.01695)
 txtb0.place(x=130, y=140)
 
 
 lbltm = Label(window, text="Tm", bg=bg_color, fg="#000",font="Helvetica 10 bold").place(x=100, y=170)
 textotm = StringVar()
 txttm1 = Entry(window, width=10, textvariable=textotm)
-textotm.set(0.61 / 1000)
+textotm.set(8.8943e-4)
 txttm1.place(x=130, y=170)
 #############################################################
 #                     Controlador
@@ -108,22 +108,24 @@ lblacon = Label(window, text="Ingrese los valores del PID", bg=bg_color, fg="#00
 lblkp = Label(window, text="Kp", bg=bg_color, fg="#000",font="Helvetica 10 bold").place(x=355, y=50)
 textokp = StringVar()
 txtkp = Entry(window, width=10, textvariable=textokp)
-textokp.set(1.06)
+textokp.set(0.25054)
 txtkp.place(x=390, y=50)
 
 lblkd = Label(window, text="Kd", bg=bg_color, fg="#000",font="Helvetica 10 bold").place(x=355, y=80)
 textokd = StringVar()
 txtkd = Entry(window, width=10, textvariable=textokd)
-textokd.set(-0.08)
+textokd.set(0.00011034)
 txtkd.place(x=390, y=80)
 
 lblki = Label(window, text="Ki", bg=bg_color, fg="#000",font="Helvetica 10 bold").place(x=355, y=110)
 textoki = StringVar()
 txtki = Entry(window, width=10, textvariable=textoki)
-textoki.set(215.7)
+textoki.set(5.4552)
 txtki.place(x=390, y=110)
 
 
+o_x1 = 0
+o_x2 = 0
 
 # ---------------------------------------------------------------------------
 
@@ -143,16 +145,9 @@ def Controlador():
         #puerto.write((str(ki) + "\n").encode())
 
 
-
-
-
-
-
-
-
 ############################################################3
 def configurar():
-    global a2,a1,a0,b0,tm,t, banderaConfigurar, trespinicial, respinicial
+    global a2,a1,a0,b0,b1,b2,tm,t, banderaConfigurar, trespinicial, respinicial
     banderaConfigurar = True
     trespinicial=np.linspace(0,1,num=499)
     respinicial=np.array([])
@@ -160,23 +155,27 @@ def configurar():
     a1 = float(txta1.get())  # 2
     a0 = float(txta0.get())  # 3
     b0 = float(txtb0.get()) # 5
+    b1 = 0.1786  # 5
+    b2 = 0  # 5
     tm = float(txttm1.get()) # 4
 
     y_1=0
     y_2=0
     for i in trespinicial:
-        yinicial = (1 * b0 * tm * tm + (2 * a2 + a1 * tm) * y_1 - a2 * y_2 - a2 * y_2)/(a2 + a1 * tm + a0 * tm * tm)
+        #yinicial = (1 * b0 * tm * tm + (2 * a2 + a1 * tm) * y_1 - a2 * y_2 - a2 * y_2)/(a2 + a1 * tm + a0 * tm * tm)
+        yinicial = planta(1.00)
         respinicial = np.append(respinicial, yinicial)
         y_2 = y_1
         y_1 = yinicial
 
 def respuestaPlanta():
-    global puerto, u, t, yout, a2 , a1 , a0, b0, tm, banderaConfigurar
+    global puerto, u, t, yout, a2 , a1 , a0, b0, tm, banderaConfigurar, o_x1, o_x2
 
     ################################################################
     # Si se abre el puerto
 
-
+    o_x1 = 0
+    o_x2 = 0
     if puerto.is_open == 1 and banderaConfigurar == True and banderacontrolador== True:  # si esta conectado
         puerto.reset_input_buffer()
         auxy = np.array([])
@@ -188,7 +187,7 @@ def respuestaPlanta():
 
         btn_comunicar.config(bg='green', text='Iniciar comunicacion')
         puerto.write(b'o')  # Envia el caracter "o" para iniciar la comunicacion
-        timeout = 999  # Se realizan 499 antes de salir del ciclo
+        timeout = 499  # Se realizan 499 antes de salir del ciclo
 
         print("Comenzando")
         while True:
@@ -199,19 +198,19 @@ def respuestaPlanta():
             else:
 
 
-                y = (float(int(lect) / 100) * b0 * tm * tm + (2 * a2 + a1 * tm) * y_1 - a2 * y_2 - a2 * y_2) / ( a2 + a1 * tm +a0 * tm * tm)
-
-                y_2 = y_1
-                y_1 = y
+                #y = (float(int(lect) / 100) * b0 * tm * tm + (2 * a2 + a1 * tm) * y_1 - a2 * y_2 - a2 * y_2) / ( a2 + a1 * tm +a0 * tm * tm)
+                y = planta(float(int(lect) / 1000.0))
+                #y_2 = y_1
+                #y_1 = y
                 auxy = np.append(auxy, y)
 
                 # print(y)
-                b = int(y * 100)
+                b = int(y * 1000)
 
                 puerto.write((str(b) + "\n").encode())
             #						print(str(env))
             count += 1  # Aumenta la cuenta
-            t = np.append(t, perf_counter())
+            t = np.append(t, count * tm)
 
 
             ########################################################################
@@ -297,6 +296,15 @@ def step_info(t, yout):
     print("Ts: %fs" % (t[next(len(yout) - i for i in range(2, len(yout) - 1) if abs(yout[-i] / yout[-1]) > 1.02)] - t[0]))
     lblSp.config(text="Sp: %f%s" % ((yout.max() / yout[-1] - 1) * 100, '%'))
 
+##################################################################
+def planta(signal):
+    global b2, b1 , b0, a1, a0, o_x1, o_x2
+    o2 = o_x2
+    output = b2 * signal + o_x1
+    o_x2 = b0 * signal - a0 * output
+    o_x1 = b1 * signal - a1 * output + o2
+
+    return output
 
 ##################################################################
 #                 Funcion para graficar
@@ -308,15 +316,16 @@ def Graficar():
     t = t - t[0]
     #step_info(t,yout)
     plt.plot(t,yout)
+    #plt.plot(yout)
     #plt.plot(t)
     plt.grid(alpha=0.3)
     plt.xlabel('t')
     plt.show()
 
 def Graficarinicio():
-    global tm
-    trespinicial = np.linspace(0, tm, num=499)
-    respinicial = np.array([])
+    global tm,respinicial,trespinicial
+    #trespinicial = np.linspace(0, tm, num=499)
+    #respinicial = np.array([])
     plt.plot(trespinicial,respinicial)
     plt.grid(alpha=0.3)
     plt.xlabel('t')
