@@ -1,380 +1,539 @@
 from tkinter import *
+from tkinter.ttk import Progressbar
 import matplotlib.pyplot as plt
 import numpy as np
 from time import perf_counter
 import serial
-
+from serial import SerialException
 import sys
 
-###########################################
-# definiendo el puerto para la comunicacion
+################################################################################
+#            Puerto para la comunicación
+################################################################################
 puerto = serial.Serial()
-puerto.baudrate = 921600
+puerto.baudrate = 115200 #230400
 puerto.timeout = 10
-# puerto.port = "COM6"
-# puerto.open()
-###########################################
-# Valores iniciales y de las matrices
+const_comm = 1
+const_comm_extra = 1000000
+timeout_max = 999
+################################################################################
+#            Valores iniciales y de las matrices
+################################################################################
 y_1 = 0
 y_2 = 0
-
-banderaConfigurar = False
-banderacontrolador = False
-#################################
-# Arreglo vacio para entrada y salida
-u = np.array([])
-yout = np.array([])
-t = np.array([])
-y = 0
-###################################
-# Backgraund color y tamaño de la ventana
-bg_color = "#c2dbff"
-size_error_ventana = "250x100"
-
-######################################
-# Errores
-sError1 = 'Error: 01'  # Error. Campo de puerto esta vacio
-sError2 = 'Error: 02'  # Error. No hay conexion de puerto
-sError4 = 'Error: 04'  # Error en conexión
-sError3 = 'Error: 03'  # configure la planta
-sError5='Error: 05'   # Error configuración de de controlador
-#####################################
-# Ventana de Window
-
-window = Tk()
-
-window.title("PID")
-
-window.geometry('800x500')
-
-window.configure(background=bg_color)
-
-#######################################################################
-#             Autotamano de la pantalla
-
-
-###################################################################
-#   Para mostrar los valores de la grafica en la ventana emergente
-lbldatos = Label(window, bg=bg_color, fg="#000", text="Datos del gráfico",font="Helvetica 12 bold")
-lbldatos.place(x=50, y=400)
-lblSp = Label(window, bg=bg_color, fg="#000")
-lblSp.place(x=50, y=420)
-
-
-
-###############################################################
-# Para mostrar en la ventana emergente donde meter los valores de a2,a1,a0,b0
-
-lbla123 = Label(window, text="Ecuación de la planta= b0/(a2*s^2+a1*s+a0)", bg=bg_color, fg="#000",font="Helvetica 10 bold").place(x=30, y=10)
-
-lbla2 = Label(window, text="a2", bg=bg_color, fg="#000",font="Helvetica 10 bold").place(x=100, y=50)
-textoa2 = StringVar()
-txta2 = Entry(window, width=10, textvariable=textoa2)
-textoa2.set(1)
-txta2.place(x=130, y=50)
-
-
-textoa1 = StringVar()
-lbla1 = Label(window, text="a1", bg=bg_color, fg="#000", font="Helvetica 10 bold").place(x=100, y=80)
-txta1 = Entry(window, width=10, textvariable=textoa1)
-textoa1.set(-0.9902)
-txta1.place(x=130, y=80)
-
-
-lbla0 = Label(window, text="a0", bg=bg_color, fg="#000",font="Helvetica 10 bold").place(x=100, y=110)
-textoa0 = StringVar()
-txta0 = Entry(window, width=10, textvariable=textoa0)
-textoa0.set(1.016e-5)
-txta0.place(x=130, y=110)
-
-
-lblb0 = Label(window, text="b0", bg=bg_color, fg="#000",font="Helvetica 10 bold").place(x=100, y=140)
-textob0 = StringVar()
-txtb0 = Entry(window, width=10, textvariable=textob0)
-textob0.set(0.01695)
-txtb0.place(x=130, y=140)
-
-
-lbltm = Label(window, text="Tm", bg=bg_color, fg="#000",font="Helvetica 10 bold").place(x=100, y=170)
-textotm = StringVar()
-txttm1 = Entry(window, width=10, textvariable=textotm)
-textotm.set(8.8943e-4)
-txttm1.place(x=130, y=170)
-#############################################################
-#                     Controlador
-
-lblacon = Label(window, text="Ingrese los valores del PID", bg=bg_color, fg="#000",font="Helvetica 10 bold").place(x=350, y=10)
-
-lblkp = Label(window, text="Kp", bg=bg_color, fg="#000",font="Helvetica 10 bold").place(x=355, y=50)
-textokp = StringVar()
-txtkp = Entry(window, width=10, textvariable=textokp)
-textokp.set(0.25054)
-txtkp.place(x=390, y=50)
-
-lblkd = Label(window, text="Kd", bg=bg_color, fg="#000",font="Helvetica 10 bold").place(x=355, y=80)
-textokd = StringVar()
-txtkd = Entry(window, width=10, textvariable=textokd)
-textokd.set(0.00011034)
-txtkd.place(x=390, y=80)
-
-lblki = Label(window, text="Ki", bg=bg_color, fg="#000",font="Helvetica 10 bold").place(x=355, y=110)
-textoki = StringVar()
-txtki = Entry(window, width=10, textvariable=textoki)
-textoki.set(5.4552)
-txtki.place(x=390, y=110)
-
-
 o_x1 = 0
 o_x2 = 0
+kp = 0
+ki = 0
+kd = 0
+a2 = 0
+a1 = 0
+a0 = 0
+b2 = 0
+b1 = 0
+b0 = 0
+tm = 0
+flagConfigurarPlanta = False
+flagControlador = False
 
-# ---------------------------------------------------------------------------
+################################################################################
+#            Arreglo vacío para entrada y salida
+################################################################################
+u = np.array([])
+y_out = np.array([])
+t = np.array([])
+resp_inicial = np.array([])
+t_resp_inicial = np.array([])
 
-def Controlador():
-    global kp, kd, ki, banderacontrolador
-    banderacontrolador=True
-    kp = float(txtkp.get())*1000
-    kd = float(txtkd.get())*1000
-    ki = float(txtki.get())*1000
+################################################################################
+#             Errores
+################################################################################
+sError1 = 'Error: 01'  # Error. Campo de puerto está vacío
+sError2 = 'Error: 02'  # Error. No hay conexión de puerto
+sError4 = 'Error: 04'  # Error en conexión
+sError3 = 'Error: 03'  # configure la planta
+sError5 = 'Error: 05'  # Error configuración de de controlador
+
+################################################################################
+#             Ventana de Interfaz
+################################################################################
+font_family_bold = "Helvetica 10 bold"
+font_family_italic = "Helvetica 10 italic"
+comm_color = "#44bd32"
+comm_active_color = '#44bd32'
+comm_disabled_color = '#7f8fa6'
+graph_color = '#fbc531'
+fg_color = "#2f3640"
+bg_color = "#0097e6"
+size_error_ventana = "250x100"
+
+window = Tk()
+window.title("Interfaz")
+window.geometry('800x550')
+window.configure(background=bg_color)
+
+titulo_coord_y = 20  # ALtura inicial de espacios
 
 
-    if puerto.is_open==1 and banderacontrolador==True:
-       # puerto.reset_input_buffer()
+################################################################################
+#            Error de conexión al puerto
+################################################################################
+def port_error():
+    puerto.close()  # no se logró conectar
+    # abrir nueva ventana de diálogo
+    error = Tk()
+    error.title('Error: 04')
+    error.geometry(size_error_ventana)
+    lbl_port_error = Label(error, text="Error en conexión")
+    lbl_port_error.pack(padx=10, pady=30)
+
+
+################################################################################
+#            Función para gestionar apertura de puerto
+################################################################################
+def port_open():
+    try:
+        puerto.open()
+        btn_config_planta.config(state='active')
+        btn_cont.config(state='active')
+        return True
+    except SerialException:
+        port_error()
+        return None
+
+
+################################################################################
+#            Función para configurar el controlador
+################################################################################
+def setup_controlador():
+    global kp, kd, ki, flagControlador
+    flagControlador = True
+    kp = float(entry_kp.get()) * const_comm * const_comm_extra
+    kd = float(entry_kd.get()) * const_comm * const_comm_extra
+    ki = float(entry_ki.get()) * const_comm * const_comm_extra
+
+    if puerto.is_open == 1 and flagControlador:
+        # puerto.reset_input_buffer()
         puerto.write(b'p')
-        puerto.write((str(kp)+"\x7C"+str(kd)+"\x7C"+str(ki) + "\n").encode())
-        #puerto.write((str(kd)).encode())
-        #puerto.write((str(ki) + "\n").encode())
+        puerto.write(
+            (str(kp) + "\x7C" + str(kd) + "\x7C" + str(ki) + "\n").encode())
 
 
-############################################################3
-def configurar():
-    global a2,a1,a0,b0,b1,b2,tm,t, banderaConfigurar, trespinicial, respinicial
-    banderaConfigurar = True
-    trespinicial=np.linspace(0,1,num=499)
-    respinicial=np.array([])
-    a2 = float(txta2.get())  # 1
-    a1 = float(txta1.get())  # 2
-    a0 = float(txta0.get())  # 3
-    b0 = float(txtb0.get()) # 5
-    b1 = 0.1786  # 5
-    b2 = 0  # 5
-    tm = float(txttm1.get()) # 4
+################################################################################
+#            Función para configuración inicial
+################################################################################
+def setup_init():
+    global a2, a1, a0, b0, b1, b2, tm, t, flagConfigurarPlanta, resp_inicial, \
+        t_resp_inicial
+    flagConfigurarPlanta = True
 
-    y_1=0
-    y_2=0
-    for i in trespinicial:
-        #yinicial = (1 * b0 * tm * tm + (2 * a2 + a1 * tm) * y_1 - a2 * y_2 - a2 * y_2)/(a2 + a1 * tm + a0 * tm * tm)
-        yinicial = planta(1.00)
-        respinicial = np.append(respinicial, yinicial)
-        y_2 = y_1
-        y_1 = yinicial
+    a2 = float(entry_A2.get())  # 1
+    a1 = float(entry_A1.get())  # 2
+    a0 = float(entry_A0.get())  # 3
+    b0 = float(entry_B0.get())  # 5
+    b1 = float(entry_B1.get())  # 5
+    b2 = float(entry_B2.get())  # 5
+    tm = float(entry_TM.get())  # 4
 
-def respuestaPlanta():
-    global puerto, u, t, yout, a2 , a1 , a0, b0, tm, banderaConfigurar, o_x1, o_x2
+    t_resp_inicial = np.linspace(0, 1, num=timeout_max) * tm
+    resp_inicial = np.array([])
 
-    ################################################################
-    # Si se abre el puerto
+    for _ in t_resp_inicial:
+        y_inicial = np.array([])#planta(1.00)
+        resp_inicial = np.append(resp_inicial, y_inicial)
 
+    btn_graficar_inicio.config(state='active', bg=graph_color)
+
+
+################################################################################
+#            Función para obtener la respuesta de la planta
+################################################################################
+def respuesta_planta():
+    global puerto, u, t, y_out, a2, a1, a0, b0, tm, o_x1, o_x2, \
+        flagConfigurarPlanta
     o_x1 = 0
     o_x2 = 0
-    if puerto.is_open == 1 and banderaConfigurar == True and banderacontrolador== True:  # si esta conectado
+
+    if puerto.is_open == 1 and flagConfigurarPlanta and flagControlador:
         puerto.reset_input_buffer()
-        auxy = np.array([])
         t = np.array([])
-        auxy = np.array([])
-        y_2 = 0
-        y_1 = 0
+        aux_y = np.array([])
         count = 0
+        btn_comunicar.config(bg=comm_disabled_color, text='Espere por favor',
+                             state='disabled')
 
-        btn_comunicar.config(bg='green', text='Iniciar comunicacion')
-        puerto.write(b'o')  # Envia el caracter "o" para iniciar la comunicacion
-        timeout = 499  # Se realizan 499 antes de salir del ciclo
-
+        progress_bar = Progressbar(window, orient=HORIZONTAL, length=100,
+                                   mode="determinate",
+                                   takefocus=True, maximum=timeout_max)
+        progress_bar.place(x=450, y=titulo_coord_y + 390)
+        puerto.write(b'o')  # Envía el caracter "o" para iniciar la comunicación
+        timeout = timeout_max  # Se realizan timeout_max antes de salir
         print("Comenzando")
         while True:
-            lect = puerto.readline()  # guardar en la variable lect lo que lea el puerto
+            port_lect = puerto.readline()  # lectura del puerto
+            if len(port_lect) == 0:
+                u = np.insert(u, len(u), 0)
 
-            if (len(lect) == 0):
-               u = np.insert(u, len(u), 0)
             else:
-
-
-                #y = (float(int(lect) / 100) * b0 * tm * tm + (2 * a2 + a1 * tm) * y_1 - a2 * y_2 - a2 * y_2) / ( a2 + a1 * tm +a0 * tm * tm)
-                y = planta(float(int(lect) / 1000.0))
-                #y_2 = y_1
-                #y_1 = y
-                auxy = np.append(auxy, y)
-
-                # print(y)
-                b = int(y * 1000)
-
+                rx = float(int(port_lect) / const_comm)
+                y = planta(rx)
+                aux_y = np.append(aux_y, y)
+                b = int(y * const_comm)
                 puerto.write((str(b) + "\n").encode())
-            #						print(str(env))
             count += 1  # Aumenta la cuenta
             t = np.append(t, count * tm)
+            progress_bar.step()
+            window.update()
 
-
-            ########################################################################
-            # Cuando la cuenta termina escribe a "C"
+            ####################################################################
+            # Cuando la cuenta termina escribe "c"
             if count > timeout:
                 print("Terminado")
                 puerto.write(b'c')  # manda msj de apagar
-                yout = auxy
-                del auxy
-                y_2 = 0
-                y_1 = 0
-                y = 0
+                y_out = aux_y
+                btn_comunicar.config(bg=comm_color, text='Iniciar comunicación',
+                                     state='active')
+                progress_bar.destroy()
+                btn_graficar.config(state='active')
+                del aux_y
                 break
 
     else:  # si no esta conectado
-        # abrir nueva ventana de dialogo
-        if banderaConfigurar == False:
+        # abrir nueva ventana de diálogo
+        if not flagConfigurarPlanta:
             error3 = Tk()
             error3.title(sError3)
             error3.geometry(size_error_ventana)
 
-            labelconfigurar = Label(error3, text="Debe configurar la planta primero", font="Helvetica 10 bold")
-            labelconfigurar.pack(padx=10, pady=30)
-        elif banderacontrolador == False:
+            lbl_configurar = Label(error3,
+                                   text="Debe configurar la planta primero",
+                                   font=font_family_bold)
+            lbl_configurar.pack(padx=10, pady=30)
+        elif not flagControlador:
 
-
-            errorcont=Tk()
-            errorcont.title(sError5)
-            errorcont.geometry(size_error_ventana)
-            labelcont=Label(errorcont, text=" Se debe configurar el controlador", font="Helvetica 10 bold")
-            labelcont.pack(padx=10,pady=30)
+            error_controller = Tk()
+            error_controller.title(sError5)
+            error_controller.geometry(size_error_ventana)
+            lbl_cont = Label(error_controller,
+                             text="Se debe configurar el controlador",
+                             font=font_family_bold)
+            lbl_cont.pack(padx=10, pady=30)
         else:
             error2 = Tk()
             error2.title(sError2)
             error2.geometry(size_error_ventana)
 
-            labelconectarsep = Label(error2, text="Debe conectarse a un puerto",font="Helvetica 10 bold")
-            labelconectarsep.pack(padx=10, pady=30)
+            lbl_conn_port = Label(error2, text="Debe conectarse a un puerto",
+                                  font=font_family_bold)
+            lbl_conn_port.pack(padx=10, pady=30)
 
 
-def conectar():
-    # si hay algo en el cuadro de texto, intento establecer conexion
-    if puerto.is_open == 0:  # si esta desconectado entro aqui
+################################################################################
+#            Función para conectar el puerto
+################################################################################
+def conectar_puerto():
+    # si hay algo en el cuadro de texto, intento establecer conexión
+    if puerto.is_open == 0:  # si esta desconectado entro aquí
         if portCom.get() != "":
-
             puerto.port = portCom.get()
+            if port_open() is not None:
+                lbl_desconectado.config(text='Conectado')
+                btn_Conectar.config(text='Desconectar')
 
-            try:
-                puerto.open()
-                labeldesconectado.config(text='Conectado')
-            except:
-                puerto.close()  # no se logró conectar
-
-                # abrir nueva ventana de dialogo
-                error = Tk()
-                error.title('Error: 04')
-                error.geometry(size_error_ventana)
-
-                labelpuerto = Label(error, text="Error en conexión")
-                labelpuerto.pack(padx=10, pady=30)
-
-        # si la entrada de texto esta vacia
+        # si la entrada de texto está vacía
         if portCom.get() == "":
-            # abrir nueva ventana de dialogo
+            # abrir nueva ventana de diálogo
             error = Tk()
             error.title(sError1)
             error.geometry(size_error_ventana)
 
-            # por favor ingrese un puerto valido
-            labelpuerto = Label(error, text="Inserte puerto válido (Ej: Com 1)")
-            labelpuerto.pack(padx=10, pady=30)
-    else:  # si esta conectado entro aqui
+            # por favor ingrese un puerto válido
+            lbl_port_error = Label(error, text="Inserte un puerto válido (Ej: "
+                                               "COM1)")
+            lbl_port_error.pack(padx=10, pady=30)
+    else:  # si está conectado entro aquí
         puerto.close()
-        labeldesconectado.config(text='Desconectado')
+        lbl_desconectado.config(text='Desconectado')
+        btn_Conectar.config(text='Conectar')
 
 
-##################################################################
-#            Funcion para obtener los valores de la grafica
+################################################################################
+#            Función para obtener los valores de la gráfica
+################################################################################
+def step_info(time, output):
+    print("Sp: %f%s" % ((output.max() / output[-1] - 1) * 100, '%'))
+    print("Tr: %fs" % (time[next(
+        i for i in range(0, len(output) - 1) if output[i] > output[-1] * .90)] -
+                       time[0]))
+    # print(
+    #     "Ts: %fs" % (time[next(
+    #         len(output) - i for i in range(2, len(output) - 1) if
+    #         abs(output[-i] / output[-1]) > 1.02)] - time[0]))
+    #lblSp.config(text="Sp: %f%s" % ((output.max() / output[-1] - 1) * 100,
+    # '%'))
+    lbl_datos_sp.config(text="Sp: %f%s" % ((output.max() / output[-1] - 1) *
+                                            100, '%'))
+    lbl_datos_tr.config(text="Tr: %fs" % (time[next(
+        i for i in range(0, len(output) - 1) if output[i] > output[-1] * .90)] -
+                       time[0]))
+    # lbl_datos_ts.config(text="Ts: %fs" % (time[next(
+    #         len(output) - i for i in range(2, len(output) - 1) if
+    #         abs(output[-i] / output[-1]) > 1.02)] - time[0]))
 
-def step_info(t, yout):
-    print("Sp: %f%s" % ((yout.max() / yout[-1] - 1) * 100, '%'))
-    print("Tr: %fs" % (t[next(i for i in range(0, len(yout) - 1) if yout[i] > yout[-1] * .90)] - t[0]))
-    print("Ts: %fs" % (t[next(len(yout) - i for i in range(2, len(yout) - 1) if abs(yout[-i] / yout[-1]) > 1.02)] - t[0]))
-    lblSp.config(text="Sp: %f%s" % ((yout.max() / yout[-1] - 1) * 100, '%'))
-
-##################################################################
+################################################################################
+#            Función para obtener emulación de la planta
+################################################################################
 def planta(signal):
-    global b2, b1 , b0, a1, a0, o_x1, o_x2
+    global o_x1, o_x2
     o2 = o_x2
     output = b2 * signal + o_x1
+    o_x1 = b1 * signal - a1 * output + o_x2
     o_x2 = b0 * signal - a0 * output
-    o_x1 = b1 * signal - a1 * output + o2
 
     return output
 
-##################################################################
-#                 Funcion para graficar
 
-def Graficar():
-    global t, yout
-    #print(t)
-    #print(yout)
-    t = t - t[0]
-    #step_info(t,yout)
-    plt.plot(t,yout)
-    #plt.plot(yout)
-    #plt.plot(t)
+################################################################################
+#                 Función para graficar respuesta
+################################################################################
+def graficar_respuesta():
+    global t, y_out
+    # print(t)
+    # print(y_out)
+    t = (t - t[0]) * tm
+    step_info(t,y_out)
+    plt.plot(t, y_out)
+    # plt.plot(y_out)
+    # plt.plot(t)
     plt.grid(alpha=0.3)
     plt.xlabel('t')
     plt.show()
 
-def Graficarinicio():
-    global tm,respinicial,trespinicial
-    #trespinicial = np.linspace(0, tm, num=499)
-    #respinicial = np.array([])
-    plt.plot(trespinicial,respinicial)
+
+
+################################################################################
+#            Función para graficar respuesta natural
+################################################################################
+def graficar_inicio():
+    global tm, resp_inicial, t_resp_inicial
+    resp_inicial = np.array([])
+    for _ in t_resp_inicial:
+        y_inicial = planta(1.00 * const_comm_extra)
+        resp_inicial = np.append(resp_inicial, y_inicial)
+    plt.plot(t_resp_inicial, resp_inicial)
     plt.grid(alpha=0.3)
     plt.xlabel('t')
     plt.show()
 
-####################################################################
-# 				BOTON PARA CONFIGURAR PLANTA
+################################################################################
+#                    título
+################################################################################
 
-btn = Button(window, text="Configurar Planta", command=configurar,font="Helvetica 10 bold")
-btn.place(x=125, y=210)
+lbl_title = Label(window, text="Interfaz gráfica del controlador PID",
+                  bg=bg_color,
+                       fg=fg_color, font="Helvetica 15 bold")
+lbl_title.place(x=250, y=10)
+################################################################################
+#             Datos gráfico respuesta controlada
+################################################################################
+#   Para mostrar los valores de la gráfica en la ventana emergente
+lbl_datos = Label(window, bg=bg_color, fg=fg_color, text="Datos del gráfico",
+                  font="Helvetica 12 bold")
+lbl_datos.place(x=30, y=titulo_coord_y +180)
+
+lbl_datos_sp = Label(window, bg=bg_color, fg=fg_color, text="",
+                  font=font_family_italic)
+lbl_datos_sp.place(x=40, y=titulo_coord_y +220)
+
+lbl_datos_tr = Label(window, bg=bg_color, fg=fg_color, text="",
+                  font=font_family_italic)
+lbl_datos_tr.place(x=40, y=titulo_coord_y +250)
+
+lbl_datos_ts = Label(window, bg=bg_color, fg=fg_color, text="",
+                  font=font_family_italic)
+lbl_datos_ts.place(x=40, y=titulo_coord_y +280)
+
+################################################################################
+#                     ECUACIÓN DE PLANTA
+################################################################################
+lbl_equation1 = Label(window, text="Ecuación de la planta=",
+                      bg=bg_color, fg=fg_color, font=font_family_bold)
+lbl_equation1.place(x=320, y=titulo_coord_y + 30)
+lbl_equation2 = Label(window, text="(b2*z^2+b1*z+b0)/(a2*z^2+a1*z+a0)",
+                      bg=bg_color, fg=fg_color, font=font_family_italic)
+lbl_equation2.place(x=320, y=titulo_coord_y +50)
+
+################################################################################
+#                     COEFICIENTE A2
+################################################################################
+lbl_A2 = Label(window, text="a2", bg=bg_color, fg=fg_color,
+               font=font_family_bold)
+lbl_A2.place(x=370, y=titulo_coord_y +90)
+text_A2 = StringVar()
+text_A2.set('1')
+entry_A2 = Entry(window, width=10, textvariable=text_A2, state=DISABLED)
+entry_A2.place(x=400, y=titulo_coord_y +90)
+
+################################################################################
+#                     COEFICIENTE A1
+################################################################################
+lbl_A1 = Label(window, text="a1", bg=bg_color, fg=fg_color,
+               font=font_family_bold)
+lbl_A1.place(x=370, y=titulo_coord_y +120)
+text_A1 = StringVar()
+text_A1.set('-1.007')
+entry_A1 = Entry(window, width=10, textvariable=text_A1)
+entry_A1.place(x=400, y=titulo_coord_y +120)
+
+################################################################################
+#                     COEFICIENTE A0
+################################################################################
+lbl_A0 = Label(window, text="a0", bg=bg_color, fg=fg_color,
+               font=font_family_bold)
+lbl_A0.place(x=370, y=titulo_coord_y +150)
+text_A0 = StringVar()
+text_A0.set('0.01084')
+entry_A0 = Entry(window, width=10, textvariable=text_A0)
+entry_A0.place(x=400, y=titulo_coord_y +150)
+
+################################################################################
+#                     COEFICIENTE B2
+################################################################################
+lbl_B2 = Label(window, text="b2", bg=bg_color, fg=fg_color,
+               font=font_family_bold)
+lbl_B2.place(x=370, y=titulo_coord_y +180)
+text_B2 = StringVar()
+text_B2.set('0')
+entry_B2 = Entry(window, width=10, textvariable=text_B2)
+entry_B2.place(x=400, y=titulo_coord_y +180)
+
+################################################################################
+#                     COEFICIENTE B1
+################################################################################
+lbl_B1 = Label(window, text="b1", bg=bg_color, fg=fg_color,
+               font=font_family_bold)
+lbl_B1.place(x=370, y=titulo_coord_y +210)
+text_B1 = StringVar()
+text_B1.set('0.0603')
+entry_B1 = Entry(window, width=10, textvariable=text_B1)
+entry_B1.place(x=400, y=titulo_coord_y +210)
+
+################################################################################
+#                     COEFICIENTE B0
+################################################################################
+lbl_B0 = Label(window, text="b0", bg=bg_color, fg=fg_color,
+               font=font_family_bold)
+lbl_B0.place(x=370, y=titulo_coord_y +240)
+text_B0 = StringVar()
+text_B0.set('0.01603')
+entry_B0 = Entry(window, width=10, textvariable=text_B0)
+entry_B0.place(x=400, y=titulo_coord_y +240)
+
+################################################################################
+#                     TIEMPO DE MUESTREO
+################################################################################
+lbl_TM = Label(window, text="Tm", bg=bg_color, fg=fg_color,
+               font=font_family_bold)
+lbl_TM.place(x=370, y=titulo_coord_y +270)
+text_TM = StringVar()
+text_TM.set('3.5e-4')
+entry_TM = Entry(window, width=10, textvariable=text_TM)
+entry_TM.place(x=400, y=titulo_coord_y +270)
+
+################################################################################
+#                     CONTROLADOR
+################################################################################
+lbl_controller = Label(window, text="Ingrese los valores del PID", bg=bg_color,
+                       fg=fg_color, font=font_family_bold)
+lbl_controller.place(x=570, y=titulo_coord_y + 30)
+
+################################################################################
+#                     K PROPORCIONAL
+################################################################################
+lbl_kp = Label(window, text="Kp", bg=bg_color, fg=fg_color,
+               font=font_family_bold)
+lbl_kp.place(x=575, y=titulo_coord_y +60)
+text_kp = StringVar()
+text_kp.set('0.24753')
+entry_kp = Entry(window, width=10, textvariable=text_kp)
+entry_kp.place(x=610, y=titulo_coord_y +60)
+
+################################################################################
+#                     K DERIVATIVA
+################################################################################
+lbl_kd = Label(window, text="Kd", bg=bg_color, fg=fg_color,
+               font=font_family_bold)
+lbl_kd.place(x=575, y=titulo_coord_y +90)
+text_kd = StringVar()
+text_kd.set('4.3151e-5')
+entry_kd = Entry(window, width=10, textvariable=text_kd)
+entry_kd.place(x=610, y=titulo_coord_y +90)
+
+################################################################################
+#                     K INTEGRAL
+################################################################################
+lbl_ki = Label(window, text="Ki", bg=bg_color, fg=fg_color,
+               font=font_family_bold)
+lbl_ki.place(x=575, y=titulo_coord_y +120)
+text_ki = StringVar()
+text_ki.set('5.4532')
+entry_ki = Entry(window, width=10, textvariable=text_ki)
+entry_ki.place(x=610, y=titulo_coord_y +120)
+
+################################################################################
+# 				BOTÓN PARA CONFIGURAR PLANTA
+################################################################################
+btn_config_planta = Button(window, text="Configurar Planta", command=setup_init,
+             font=font_family_bold, state='disabled')
+btn_config_planta.place(x=380, y=titulo_coord_y +310)
 # btn.grid(column=1,row =5)
-#                  BOTON CONFIGURAR CONTROLADOR
 
+################################################################################
+#                BOTÓN CONFIGURAR CONTROLADOR
+################################################################################
+btn_cont = Button(window, text="Configurar el controlador",
+                  command=setup_controlador, font=font_family_bold,
+                  state='disabled')
+btn_cont.place(x=570, y=titulo_coord_y +150)
 
-btncont = Button(window, text="Configurar el controlador", command=Controlador,font="Helvetica 10 bold")
-btncont.place(x=350, y=150)
+################################################################################
+# 				BOTÓN PARA CONECTAR PUERTO
+################################################################################
 
-####################################################################
-# 				BOTON PARA CONECTAR PUERTO
-
-
-labelPuerto = Label(window, text="Inserte un puerto (Ejemplo: com#):", bg=bg_color, fg="#000", font="Helvetica 10 bold").place(x=570, y=10)
-
+lbl_port = Label(window, text="Inserte un puerto (Ejemplo: COM#):",
+                 bg=bg_color, fg=fg_color, font=font_family_bold)
+lbl_port.place(x=30, y=titulo_coord_y + 30)
 portCom = Entry(window, width=10)
-portCom.place(x=580, y=40)
+portCom.place(x=40, y=titulo_coord_y + 60)
+lbl_desconectado = Label(window, text="Desconectado", bg=bg_color, fg=fg_color,
+                         font=font_family_bold)
+lbl_desconectado.place(x=30, y=titulo_coord_y + 100)
+btn_Conectar = Button(window, text="Conectar", command=conectar_puerto, width=9,
+                      font=font_family_bold)
+btn_Conectar.place(x=40, y=titulo_coord_y + 130)
 
-labeldesconectado = Label(window, text="Desconectado", bg=bg_color, fg="#000",font="Helvetica 10 bold")
+################################################################################
+# 			BOTÓN PARA INICIAR COMUNICACIÓN
+################################################################################
+btn_comunicar = Button(window, text="Iniciar comunicación", bg=comm_color,
+                       command=respuesta_planta, font=font_family_bold)
+btn_comunicar.place(x=300, y=titulo_coord_y + 390)
 
-labeldesconectado.place(x=570, y=80)
-btn_Conectar = Button(window, text="Conectar", command=conectar, width=9,font="Helvetica 10 bold")
+################################################################################
+# 			BOTÓN PARA GRAFICAR RESPUESTA
+################################################################################
+btn_graficar = Button(window, text="Graficar respuesta controlada",
+                      bg=graph_color, command=graficar_respuesta,
+                      font=font_family_bold, state='disabled')
+btn_graficar.place(x=120, y=titulo_coord_y +440)
 
-btn_Conectar.place(x=580, y=110)
+################################################################################
+# 			BOTÓN PARA GRAFICAR RESPUESTA INICIAL
+################################################################################
+btn_graficar_inicio = Button(window, text="Graficar respuesta original",
+                             bg=graph_color, command=graficar_inicio,
+                             font=font_family_bold, state='disabled')
+btn_graficar_inicio.place(x=420, y=titulo_coord_y +440)
 
-
-portC = portCom.get()
-
-
-
-#####################################################################
-# 			BOTON PARA INICIAR COMUNICACION
-
-btn_comunicar = Button(window, text="Iniciar comunicación", bg='#99d160', command=respuestaPlanta, font="Helvetica 10 bold")
-btn_comunicar.place(x=300, y=270)
-#######################################################################
-#               Boton para comunicación
-
-btn_graficar = Button(window, text="Graficar respuesta controlada", bg='#f1d600', command=Graficar,font="Helvetica 10 bold")
-btn_graficar.place(x=120, y=320)
-btn_graficarinicio = Button(window, text="Graficar respuesta original", bg='#f1d600', command=Graficarinicio,font="Helvetica 10 bold")
-btn_graficarinicio.place(x=420, y=320)
-
-window.mainloop()
+if __name__ == '__main__':
+    window.mainloop()
