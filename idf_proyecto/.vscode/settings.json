@@ -38,5 +38,6 @@
         "tuple": "c",
         "type_traits": "c",
         "utility": "c"
-    }
+    },
+    "vscode-corda.isCordaProject": false
 }

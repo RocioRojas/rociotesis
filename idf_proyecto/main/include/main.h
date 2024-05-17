@@ -15,7 +15,6 @@
 #include "driver/uart.h"
 #include "esp_log.h"
 #include "driver/gpio.h"
-// #include "driver/adc.h"
 #include "soc/uart_struct.h"
 
 #ifdef __cplusplus
@@ -39,8 +38,6 @@ extern "C"
 
 #define TAM_COLA_SECANTE 1 /*1 mensajes*/
 #define TAM_MSG_SECANTE 8  /*Cada Mensaje 1 Double (8 bytes)*/
-#define TAM_COLA_LECTURA 1 /*1 mensajes*/
-#define TAM_MSG_LECTURA 2  /*Cada Mensaje 1 Entero (2 bytes)*/
 #define TAM_COLA_UART 10   /*10 mensajes*/
 #define TAM_MSG_UART 20    /*Cada Mensaje 5 caracteres de 1 byte cada uno*/
 
@@ -50,6 +47,11 @@ extern "C"
 
 #define FLOAT_SCALER 100000000.0
 
+    // #define DEBUG
+
+    /**
+     * Estructura para variables de control
+     */
     struct _tControl
     {
         double ref;
@@ -57,12 +59,31 @@ extern "C"
         double Gu;
         double G;
         double Gy;
+        double Ko;
         bool isConfig;
         bool isRunning;
         bool isAproximating;
         bool isControlling;
     };
 
+    /**
+     * Estructura de función de transferencia en dominio Z
+     */
+    struct _tTF
+    {
+        /*
+            # bb2 z^2 + bb1 z + bb0      B(z)
+            # -----------------------  = ----
+            # z^2 + aa1 z + aa0          A(z)
+        */
+
+        double b0, b1, b2;
+        double a0, a1, a2;
+    };
+
+    /**
+     * Estructura para variables iniciales y mutables
+     */
     struct _tControlInit
     {
         double planta_x1;
@@ -74,16 +95,25 @@ extern "C"
         double sec_x2;
     };
 
+    /**
+     * Declaración de parámetros
+     */
     struct _tControlInit tControlParams;
     struct _tControl tControl;
+    struct _tTF Gp;
 
     QueueHandle_t uartQueue;
     QueueHandle_t aproxQueue;
 
+    /**
+     * Tareas
+     */
     static void rx_task(void *arg);
-
     static void aproxTask(void *arg);
     static void controllerTask(void *arg);
+    /**
+     * Funciones
+     */
     int sendData(char *data);
     void initConfig(void);
     double secanteAprox(void);
